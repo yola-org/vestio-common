@@ -3,7 +3,7 @@
 Shared plain Java entities, enums, events, utilities and AppSync Events publishing
 for Vestio applications, including `vestio-backend` and `lambda-image-optimizer`.
 
-**Artifact:** `com.vestio:vestio-common:0.1.0`
+**Artifact:** `com.vestio:vestio-common:0.2.0`
 **Java namespace:** `com.vestio.common`
 **Java:** 25
 
@@ -13,7 +13,7 @@ for Vestio applications, including `vestio-backend` and `lambda-image-optimizer`
 | --- | --- |
 | `com.vestio.common.entity` | `Notification`, `NotificationOutbox` |
 | `com.vestio.common.entity.enums` | `NotificationType`, `ListingStatus`, `OfferStatus`, `Condition`, `ContactType` |
-| `com.vestio.common.event` | `BaseEvent`, `NotificationEvent`, `ListingCreatedEvent` |
+| `com.vestio.common.event` | `BaseEvent`, `NotificationEvent`, `NotificationCreated`, `ListingCreatedEvent` |
 | `com.vestio.common.publisher` | `AppSyncEventsPublisher`, `RealtimeChannelsNamespace` |
 
 The shared classes were extracted from the backend notification implementation.
@@ -68,7 +68,7 @@ repositories {
     }
 }
 dependencies {
-    implementation 'com.vestio:vestio-common:0.1.0'
+    implementation 'com.vestio:vestio-common:0.2.0'
 }
 ```
 
@@ -112,6 +112,10 @@ The endpoint must be an HTTPS AppSync Events `/event` URL. The publisher signs
 requests with IAM, routes to `/<namespace>/<userId>`, and treats HTTP or per-event
 publication failures as exceptional completion. Publisher calls do not provide
 database transactions, an outbox, or delivery retries; each consumer owns those.
+
+`NotificationCreated` is a plain Java application event carrying the saved notification.
+Applications may use it to coordinate transactional listeners without duplicating the type.
+It is separate from the serialized realtime `NotificationEvent` envelope.
 
 ## Notification contract
 
