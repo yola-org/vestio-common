@@ -1,6 +1,6 @@
 # Vestio Events
 
-Reusable Java types and AppSync Events publishing for `vestio-backend` and
+Plain Java types and AppSync Events publishing for `vestio-backend` and
 `lambda-image-optimizer`.
 
 **Artifact:** `com.vestio:vestio-events:0.1.0`
@@ -15,13 +15,14 @@ Reusable Java types and AppSync Events publishing for `vestio-backend` and
 | `com.vestio.events.entity.enums` | `NotificationType`, `ListingStatus`, `OfferStatus`, `Condition`, `ContactType` |
 | `com.vestio.events.event` | `BaseEvent`, `NotificationEvent`, `NotificationCreated`, `ListingCreatedEvent` |
 | `com.vestio.events.publisher` | `AppSyncEventsPublisher`, `RealtimeChannelsNamespace` |
-| `com.vestio.events.repository` | `NotificationRepository` |
 
 The shared classes were extracted from the backend notification implementation.
 This is a normal Java library: it does not start an application, connect to a
 database, fetch credentials, run migrations, or register Spring beans on its own.
-Applications keep their notification orchestration, transaction boundaries,
-retry policy and database migrations.
+The artifact has no Spring dependencies, repositories, Boot starters or auto-configuration.
+Applications keep their repositories, notification orchestration, transaction
+boundaries, retry policy and database migrations. The shared entities retain
+Jakarta Persistence/Hibernate mappings so both applications map the same schema.
 
 ## Build and test
 
@@ -40,7 +41,7 @@ They use an in-memory database and mocked HTTP; no AWS credentials are needed.
 
 This writes Maven metadata to `build/publications/mavenJava/pom-default.xml`.
 Hibernate is supplied by the consuming application. The library's public API
-exposes Jakarta Persistence, Jackson 3, Spring Data JPA, and AWS credentials types;
+exposes Jakarta Persistence, Jackson 3, and AWS credentials types;
 Gradle/Maven metadata declares the corresponding dependencies. The AWS SDK BOM
 keeps the consuming application's SDK components aligned at `2.59.2`.
 
@@ -77,26 +78,13 @@ authorized workflow token. Supply credentials through environment variables or
 untracked user-level `~/.gradle/gradle.properties`; never commit tokens.
 See [GitHub's Gradle registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry).
 
-### Spring Boot entity and repository scanning
+### Integrate the Java classes
 
-When migrating a consumer, remove its copied notification entities/repository and
-change imports to this library. Ensure entity and repository scanning includes
-the shared packages as well as the application's own packages:
-
-```java
-import com.vestio.events.entity.Notification;
-import com.vestio.events.repository.NotificationRepository;
-import org.springframework.boot.persistence.autoconfigure.EntityScan;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-
-@EntityScan(basePackages = {"org.app.vestiobackend.entity", "com.vestio.events.entity"})
-@EnableJpaRepositories(basePackages = {"org.app.vestiobackend.repository", "com.vestio.events.repository"})
-```
-
-Lambda uses `com.vestio.imageoptimizer` as its application package instead.
-Keep the existing Hibernate runtime and Liquibase-managed schema. Do not scan
-both the old copied entities and the shared entities, since they map the same
-tables. Neither consumer has been changed as part of this package's creation.
+Replace copied model/event/publisher classes with imports from this library.
+Keep repository interfaces in the applications. Each application configures its
+own entity discovery or persistence unit to include `com.vestio.events.entity`,
+and keeps its existing Hibernate runtime and Liquibase-managed schema.
+Do not map both the old copied entities and the shared entities to the same tables.
 
 ### Register the publisher
 
@@ -152,20 +140,39 @@ shape, including a notification unrelated to a listing.
 }
 ```
 
-## Publish a version
+## CI and automatic releases
 
-`.github/workflows/ci.yml` verifies branches and pull requests. A version tag
-also runs the publishing job with `contents: read` and `packages: write`, using
-the workflow's `GITHUB_TOKEN`; no publishing token needs to be committed.
+The workflow follows `yola-org/lambda-image-optimizer` and reuses these actions
+from `yola-org/shared-workflows`:
 
-1. Create the `yola-org/vestio-events` GitHub repository and push this source.
-2. Set `version` in `gradle.properties` to the next semantic version.
-3. Push a matching tag, for example `git tag v0.1.0` and `git push origin v0.1.0`.
-4. Wait for the `publish` job, then verify the package version in GitHub Packages.
+- `reusable-release-gate.yml`, with `require-merged-pr: true`.
+- `reusable-version.yml`, with `prefix: v`, `initial: 0.1.0`, and `tag: false`.
+- `version-tag`, run after publishing succeeds.
 
-The tag must match the declared project version. Released Maven coordinates are
-immutable; publish a new version for changes. Manual workflow dispatch verifies
-only; publishing requires a version tag.
+Pull requests, pushes to `main`, and manual workflow dispatch run the normal
+build, tests and publication-metadata verification. The dependency check also
+rejects Spring dependencies in the library's runtime graph.
+
+After a merge into `main`, the release gate allows the release jobs to run once
+verification succeeds. CI calculates the next version from existing `v*` tags,
+publishes the JAR, sources and Javadoc to GitHub Packages using
+`-Pversion=<calculated-version>`, then creates and pushes the matching annotated
+tag. No manual tag push or version-file commit is needed. Manual dispatch verifies
+only. Active releases are not cancelled by subsequent pushes.
+
+The initial release is `0.1.0` / `v0.1.0`. Subsequent versions follow the shared
+calculator: `feat:` increases the minor version, breaking `feat!:` increases the
+major version, and other commit titles increase the patch version. Squash-merge
+PRs with conventional titles to carry that title into the main commit.
+
+The repository's `gradle.properties` version is the local development default;
+CI overrides it with the calculated release version. The publisher uses the
+workflow's `GITHUB_TOKEN` with `packages: write`. Tag creation uses
+`contents: write`. There is no committed publishing credential.
+
+Create the `yola-org/vestio-events` GitHub repository and push the source before
+this workflow can run. GitHub Packages has not been published from this local
+repository yet. Published Maven versions are immutable.
 
 For local consumption before a remote publication:
 
@@ -173,6 +180,5 @@ For local consumption before a remote publication:
 ./gradlew publishToMavenLocal
 ```
 
-Then temporarily enable `mavenLocal()` in a consumer. The verification performed
-during package creation used an isolated temporary Maven repository instead of
-modifying the user's normal Maven repository.
+Then temporarily enable `mavenLocal()` in a consumer. Package-creation checks
+used an isolated temporary Maven repository rather than the user's normal one.

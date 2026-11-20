@@ -1,21 +1,23 @@
-name: Verify and publish Java package
+name: CI
 
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: java-package-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  # Do not interrupt a main release between publishing the package and tagging it.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify:
+    name: Build and test
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -33,9 +35,33 @@ jobs:
           name: test-reports
           path: build/reports/
 
+  release-gate:
+    name: Check merged PR
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: yola-org/shared-workflows/.github/workflows/reusable-release-gate.yml@main
+    with:
+      base-branch: main
+      require-merged-pr: true
+
+  version:
+    name: Calculate version
+    needs: release-gate
+    if: ${{ needs.release-gate.outputs.release == 'true' }}
+    permissions:
+      contents: write
+    uses: yola-org/shared-workflows/.github/workflows/reusable-version.yml@main
+    with:
+      prefix: v
+      initial: '0.1.0'
+      tag: false
+
   publish:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: verify
+    name: Publish GitHub Package
+    needs: [verify, release-gate, version]
+    if: ${{ needs.release-gate.outputs.release == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -48,8 +74,29 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: gradle
-      - name: Publish versioned JAR, sources and Javadoc to GitHub Packages
-        run: ./gradlew publish --no-daemon
+      - name: Publish calculated version
+        run: ./gradlew publish -Pversion="$RELEASE_VERSION" --no-daemon
         env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  tag:
+    name: Tag published release
+    needs: [version, publish]
+    if: ${{ needs.publish.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Create and push release tag
+        uses: yola-org/shared-workflows/.github/actions/version-tag@main
+        with:
+          version: ${{ needs.version.outputs.version }}
+          git-tag: ${{ needs.version.outputs.git_tag }}
+          token: ${{ secrets.GITHUB_TOKEN }}

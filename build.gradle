@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.vestio'
 version = providers.gradleProperty('version').get()
-description = 'Vestio Java entities, enums, events, repositories and AppSync Events publishing'
+description = 'Plain Java entities, enums, events and AppSync Events publishing for Vestio'
 
 java {
     toolchain { languageVersion = JavaLanguageVersion.of(25) }
@@ -34,8 +34,7 @@ dependencies {
 
     api 'jakarta.persistence:jakarta.persistence-api:3.2.0'
     api 'tools.jackson.core:jackson-databind:3.1.4'
-    api 'org.springframework.data:spring-data-jpa:4.1.0'
-    // Applications provide their Hibernate runtime. This library is not a Boot application.
+    // The consuming applications supply the Hibernate runtime for their JPA entities.
     compileOnly 'org.hibernate.orm:hibernate-core:7.4.1.Final'
     compileOnly 'org.projectlombok:lombok:1.18.46'
     annotationProcessor 'org.projectlombok:lombok:1.18.46'
@@ -48,6 +47,20 @@ dependencies {
     testImplementation 'org.hibernate.orm:hibernate-core:7.4.1.Final'
     testRuntimeOnly 'com.h2database:h2:2.4.240'
 }
+
+tasks.register('verifyNoSpringDependencies') {
+    group = 'verification'
+    description = 'Ensure that the published library has no Spring dependencies.'
+    doLast {
+        def springModules = configurations.runtimeClasspath.incoming.resolutionResult.allComponents
+                .collect { it.moduleVersion }
+                .findAll { it != null && (it.group == 'org.springframework' || it.group.startsWith('org.springframework.')) }
+        if (!springModules.empty) {
+            throw new GradleException("The library must not depend on Spring: ${springModules}")
+        }
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyNoSpringDependencies') }
 
 tasks.named('test') {
     useJUnitPlatform()
