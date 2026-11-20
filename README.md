@@ -10,10 +10,9 @@ Artifact: `com.vestio:vestio-common:0.4.0`. Java 25.
 - `NotificationType`: serializes as `listing-created`, `listing-published`, listing update/delete and offer create/update/delete types. JPA stores enum names.
 - `Event`: JSON envelope with `id`, `type` (`EventType`), JSON map `payload`, and `occurredAt`.
 - `EventType`: `notification` or `chat`. Notification payloads contain the saved notification; chat payloads may be defined later.
-- `NotificationCreated`: internal plain Java application event for coordinating persistence and after-commit listeners.
 - `AppSyncEventsPublisher`: reusable HTTP publisher. Applications provide endpoint, region, Jackson mapper, AWS credentials provider and HTTP client.
 
-Applications keep their own notification repositories, transaction listeners and database migrations. There is no notification outbox. Publish after commit; persisted inbox notifications remain available when a live send fails.
+Applications keep their own notification repositories, services and database migrations. There is no notification outbox. Services save and flush notifications, then call the publisher directly and await the result. Send failures propagate so the surrounding transaction can roll back.
 
 ```java
 publisher.dispatchNotificationEvent(savedNotification).join();
@@ -39,3 +38,14 @@ defines the map keys `offerId`, `amount` (numeric), `senderId`, `senderName` and
 remains on the notification entity. The outer event type stays `notification`.
 Older offer enum values are retained so existing inbox rows remain readable.
 The canonical wire fixture is `contracts/offer-sent-event.json`.
+
+## Typed notification payloads
+
+Every payload class implements `NotificationPayload`. `OfferSentPayload` and
+`ListingNotificationPayload` are provided by common. `payload.toMap(objectMapper)`
+uses the application's configured Jackson mapper; payload classes do not maintain
+manual field maps or create their own mappers. Consumer notification services
+accept `NotificationPayload`, while the JPA entity and wire envelope retain JSON
+maps. Optional fields, annotations and nested objects use normal Jackson behavior.
+`NotificationCreated` and internal dispatchers are removed; consumers call the
+shared AppSync publisher directly after saving and flushing their notification.

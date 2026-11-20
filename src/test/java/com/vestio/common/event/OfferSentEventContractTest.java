@@ -23,7 +23,7 @@ class OfferSentEventContractTest {
             assertNotEquals(notification.getUserId(), payload.senderId());
             assertNotNull(notification.getListingId());
             assertEquals(event.id(), notification.getId());
-            assertEquals(expected.path("payload").path("payload"), mapper.readTree(mapper.writeValueAsString(payload.toMap())));
+            assertEquals(expected.path("payload").path("payload"), mapper.readTree(mapper.writeValueAsString(payload.toMap(mapper))));
             assertEquals(expected.path("payload"), mapper.valueToTree(Event.notification(notification, mapper)).path("payload"));
             assertEquals(expected, mapper.valueToTree(event));
         }
