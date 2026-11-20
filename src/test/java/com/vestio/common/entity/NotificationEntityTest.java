@@ -20,7 +20,7 @@ class NotificationEntityTest {
             UUID userId = UUID.randomUUID();
             UUID[] notificationId = new UUID[1];
             factory.inTransaction(session -> {
-                var notification = Notification.builder().userId(userId).type(NotificationType.OFFER_CREATED)
+                var notification = Notification.builder().userId(userId).type(NotificationType.OFFER_SENT)
                         .payload(Map.of("message", "An offer was received")).build();
                 session.persist(notification);
                 session.flush();
@@ -31,7 +31,7 @@ class NotificationEntityTest {
             factory.inTransaction(session -> {
                 var notification = session.find(Notification.class, notificationId[0]);
                 assertEquals(userId, notification.getUserId());
-                assertEquals(NotificationType.OFFER_CREATED, notification.getType());
+                assertEquals(NotificationType.OFFER_SENT, notification.getType());
                 assertEquals("An offer was received", notification.getPayload().get("message"));
                 assertFalse(notification.getPayload().containsKey("listingId"));
                 assertNull(notification.getReadAt());

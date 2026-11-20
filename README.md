@@ -2,7 +2,7 @@
 
 Plain Java entities, enums, event envelopes and IAM-signed AppSync publishing shared by Vestio applications. No Spring dependency or repositories are included.
 
-Artifact: `com.vestio:vestio-common:0.3.0`. Java 25.
+Artifact: `com.vestio:vestio-common:0.4.0`. Java 25.
 
 ## Shared model
 
@@ -30,3 +30,12 @@ Run `./gradlew build generatePomFileForMavenJavaPublication`. Tests cover JSON c
 Pushes and merges to `main` run verification, calculate the next semantic version, publish JAR/sources/Javadoc to GitHub Packages and create the matching `v*` tag after successful publication. Pull requests run verification only. CI supplies `GITHUB_TOKEN` with package write access. Maven versions are immutable.
 
 Consume from `https://maven.pkg.github.com/yola-org/vestio-common` using `gpr.user` and `gpr.key` in user-level Gradle properties, or `GITHUB_ACTOR` and `GITHUB_TOKEN`. Download tokens need `read:packages` and package access.
+
+## Offer notifications
+
+`NotificationType.OFFER_SENT` serializes as `offer-sent`. `OfferSentPayload`
+defines the map keys `offerId`, `amount` (numeric), `senderId`, `senderName` and
+`listingTitle`. The notification recipient is the listing owner; `listingId`
+remains on the notification entity. The outer event type stays `notification`.
+Older offer enum values are retained so existing inbox rows remain readable.
+The canonical wire fixture is `contracts/offer-sent-event.json`.

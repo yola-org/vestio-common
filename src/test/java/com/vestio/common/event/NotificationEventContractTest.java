@@ -17,7 +17,7 @@ class NotificationEventContractTest {
             assertEquals(EventType.NOTIFICATION, event.type());
             var notification = mapper.convertValue(event.payload(), Notification.class);
             assertNull(notification.getListingId());
-            assertEquals(NotificationType.OFFER_CREATED, notification.getType());
+            assertEquals(NotificationType.OFFER_SENT, notification.getType());
             assertEquals(notification.getId(), event.id());
             assertEquals(expected, mapper.valueToTree(event));
         }
