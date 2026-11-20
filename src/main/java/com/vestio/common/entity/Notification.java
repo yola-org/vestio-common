@@ -33,7 +33,10 @@ public class Notification {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
-    private Map<String, Object> params;
+    private Map<String, Object> payload;
+
+    @Column(name = "listing_id")
+    private UUID listingId;
 
     @Column(name = "read_at")
     private LocalDateTime readAt;

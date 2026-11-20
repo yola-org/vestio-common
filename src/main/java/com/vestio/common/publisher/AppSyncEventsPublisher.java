@@ -1,8 +1,8 @@
 package com.vestio.common.publisher;
 
 import com.vestio.common.entity.Notification;
-import com.vestio.common.event.BaseEvent;
-import com.vestio.common.event.NotificationEvent;
+import com.vestio.common.event.Event;
+import com.vestio.common.event.EventType;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.ContentStreamProvider;
 import software.amazon.awssdk.http.SdkHttpMethod;
@@ -53,14 +53,12 @@ public class AppSyncEventsPublisher implements AutoCloseable {
     }
 
     /** Publishes to the user ID shared by users.id and the authenticated subscription channel. */
-    public CompletableFuture<Void> dispatchEvent(BaseEvent event, RealtimeChannelsNamespace namespace,
-                                                UUID userId) {
+    public CompletableFuture<Void> dispatchEvent(Event event, UUID userId) {
         try {
             Objects.requireNonNull(event);
-            Objects.requireNonNull(namespace);
             Objects.requireNonNull(userId);
             String body = objectMapper.writeValueAsString(Map.of(
-                    "channel", "/" + namespace.channelName + "/" + userId,
+                    "channel", "/" + (event.type() == EventType.NOTIFICATION ? "notifications" : "chat") + "/" + userId,
                     "events", List.of(objectMapper.writeValueAsString(event))));
             var request = SdkHttpRequest.builder()
                     .uri(endpoint).method(SdkHttpMethod.POST)
@@ -99,7 +97,6 @@ public class AppSyncEventsPublisher implements AutoCloseable {
     }
 
     public CompletableFuture<Void> dispatchNotificationEvent(Notification notification) {
-        NotificationEvent event = new NotificationEvent(notification);
-        return this.dispatchEvent(event, RealtimeChannelsNamespace.NOTIFICATIONS_NAMESPACE, notification.getUserId());
+        return dispatchEvent(Event.notification(notification, objectMapper), notification.getUserId());
     }
 }

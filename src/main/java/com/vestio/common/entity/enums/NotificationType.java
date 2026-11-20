@@ -1,14 +1,20 @@
 package com.vestio.common.entity.enums;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum NotificationType {
+    LISTING_CREATED("listing-created"),
+    LISTING_PUBLISHED("listing-published"),
+    LISTING_UPDATED("listing-updated"),
+    LISTING_DELETED("listing-deleted"),
+    OFFER_CREATED("offer-created"),
+    OFFER_UPDATED("offer-updated"),
+    OFFER_DELETED("offer-deleted");
 
-    LISTING_CREATED,
-    LISTING_PENDING,
-    LISTING_READY,
-    LISTING_UPDATED,
-    LISTING_DELETED,
-    OFFER_CREATED,
-    OFFER_UPDATED,
-    OFFER_DELETED,
+    private final String value;
 
+    NotificationType(String value) { this.value = value; }
+
+    @JsonValue
+    public String getValue() { return value; }
 }
