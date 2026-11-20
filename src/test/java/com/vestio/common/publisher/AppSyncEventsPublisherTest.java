@@ -1,8 +1,8 @@
-package com.vestio.events.publisher;
+package com.vestio.common.publisher;
 
-import com.vestio.events.event.ListingCreatedEvent;
-import com.vestio.events.entity.Notification;
-import com.vestio.events.entity.enums.NotificationType;
+import com.vestio.common.event.ListingCreatedEvent;
+import com.vestio.common.entity.Notification;
+import com.vestio.common.entity.enums.NotificationType;
 
 import java.util.Map;
 import org.junit.jupiter.params.ParameterizedTest;

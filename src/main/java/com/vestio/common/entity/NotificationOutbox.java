@@ -1,4 +1,4 @@
-package com.vestio.events.entity;
+package com.vestio.common.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

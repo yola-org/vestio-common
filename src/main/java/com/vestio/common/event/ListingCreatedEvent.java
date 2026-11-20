@@ -1,4 +1,4 @@
-package com.vestio.events.event;
+package com.vestio.common.event;
 
 import lombok.Builder;
 import lombok.Getter;

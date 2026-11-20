@@ -1,4 +1,4 @@
-package com.vestio.events.event;
+package com.vestio.common.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Getter;
 
 import java.util.UUID;
-import com.vestio.events.entity.Notification;
+import com.vestio.common.entity.Notification;
 
 @Builder
 @Getter

@@ -76,15 +76,15 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-            artifactId = 'vestio-events'
+            artifactId = 'vestio-common'
             pom {
-                name = 'Vestio Events'
+                name = 'Vestio Common'
                 description = project.description
-                url = 'https://github.com/yola-org/vestio-events'
+                url = 'https://github.com/yola-org/vestio-common'
                 scm {
-                    connection = 'scm:git:git://github.com/yola-org/vestio-events.git'
-                    developerConnection = 'scm:git:ssh://git@github.com/yola-org/vestio-events.git'
-                    url = 'https://github.com/yola-org/vestio-events'
+                    connection = 'scm:git:git://github.com/yola-org/vestio-common.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/yola-org/vestio-common.git'
+                    url = 'https://github.com/yola-org/vestio-common'
                 }
             }
         }
@@ -92,7 +92,7 @@ publishing {
     repositories {
         maven {
             name = 'GitHubPackages'
-            url = uri('https://maven.pkg.github.com/yola-org/vestio-events')
+            url = uri('https://maven.pkg.github.com/yola-org/vestio-common')
             credentials {
                 username = providers.gradleProperty('gpr.user').orElse(providers.environmentVariable('GITHUB_ACTOR')).getOrNull()
                 password = providers.gradleProperty('gpr.key').orElse(providers.environmentVariable('GITHUB_TOKEN')).getOrNull()

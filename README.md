@@ -1,20 +1,20 @@
-# Vestio Events
+# Vestio Common
 
-Plain Java types and AppSync Events publishing for `vestio-backend` and
-`lambda-image-optimizer`.
+Shared plain Java entities, enums, events, utilities and AppSync Events publishing
+for Vestio applications, including `vestio-backend` and `lambda-image-optimizer`.
 
-**Artifact:** `com.vestio:vestio-events:0.1.0`
-**Java namespace:** `com.vestio.events`
+**Artifact:** `com.vestio:vestio-common:0.1.0`
+**Java namespace:** `com.vestio.common`
 **Java:** 25
 
 ## Included APIs
 
 | Package | Types |
 | --- | --- |
-| `com.vestio.events.entity` | `Notification`, `NotificationOutbox` |
-| `com.vestio.events.entity.enums` | `NotificationType`, `ListingStatus`, `OfferStatus`, `Condition`, `ContactType` |
-| `com.vestio.events.event` | `BaseEvent`, `NotificationEvent`, `NotificationCreated`, `ListingCreatedEvent` |
-| `com.vestio.events.publisher` | `AppSyncEventsPublisher`, `RealtimeChannelsNamespace` |
+| `com.vestio.common.entity` | `Notification`, `NotificationOutbox` |
+| `com.vestio.common.entity.enums` | `NotificationType`, `ListingStatus`, `OfferStatus`, `Condition`, `ContactType` |
+| `com.vestio.common.event` | `BaseEvent`, `NotificationEvent`, `ListingCreatedEvent` |
+| `com.vestio.common.publisher` | `AppSyncEventsPublisher`, `RealtimeChannelsNamespace` |
 
 The shared classes were extracted from the backend notification implementation.
 This is a normal Java library: it does not start an application, connect to a
@@ -48,7 +48,7 @@ keeps the consuming application's SDK components aligned at `2.59.2`.
 ## Consume from GitHub Packages
 
 The publishing target is
-`https://maven.pkg.github.com/yola-org/vestio-events`.
+`https://maven.pkg.github.com/yola-org/vestio-common`.
 The repository/package must be created and published before remote resolution
 works. Add this to the consuming application's Gradle build:
 
@@ -56,8 +56,8 @@ works. Add this to the consuming application's Gradle build:
 repositories {
     mavenCentral()
     maven {
-        name = 'VestioEvents'
-        url = uri('https://maven.pkg.github.com/yola-org/vestio-events')
+        name = 'VestioCommon'
+        url = uri('https://maven.pkg.github.com/yola-org/vestio-common')
         content { includeGroup 'com.vestio' }
         credentials {
             username = providers.gradleProperty('gpr.user')
@@ -68,7 +68,7 @@ repositories {
     }
 }
 dependencies {
-    implementation 'com.vestio:vestio-events:0.1.0'
+    implementation 'com.vestio:vestio-common:0.1.0'
 }
 ```
 
@@ -82,14 +82,14 @@ See [GitHub's Gradle registry documentation](https://docs.github.com/en/packages
 
 Replace copied model/event/publisher classes with imports from this library.
 Keep repository interfaces in the applications. Each application configures its
-own entity discovery or persistence unit to include `com.vestio.events.entity`,
+own entity discovery or persistence unit to include `com.vestio.common.entity`,
 and keeps its existing Hibernate runtime and Liquibase-managed schema.
 Do not map both the old copied entities and the shared entities to the same tables.
 
 ### Register the publisher
 
 ```java
-import com.vestio.events.publisher.AppSyncEventsPublisher;
+import com.vestio.common.publisher.AppSyncEventsPublisher;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import tools.jackson.databind.json.JsonMapper;
 import java.net.URI;
@@ -145,7 +145,7 @@ shape, including a notification unrelated to a listing.
 The workflow follows `yola-org/lambda-image-optimizer` and reuses these actions
 from `yola-org/shared-workflows`:
 
-- `reusable-release-gate.yml`, with `require-merged-pr: true`.
+- `reusable-release-gate.yml`, with `require-merged-pr: false`.
 - `reusable-version.yml`, with `prefix: v`, `initial: 0.1.0`, and `tag: false`.
 - `version-tag`, run after publishing succeeds.
 
@@ -153,7 +153,7 @@ Pull requests, pushes to `main`, and manual workflow dispatch run the normal
 build, tests and publication-metadata verification. The dependency check also
 rejects Spring dependencies in the library's runtime graph.
 
-After a merge into `main`, the release gate allows the release jobs to run once
+After a push or merge into `main`, the release gate allows the release jobs to run once
 verification succeeds. CI calculates the next version from existing `v*` tags,
 publishes the JAR, sources and Javadoc to GitHub Packages using
 `-Pversion=<calculated-version>`, then creates and pushes the matching annotated
@@ -170,9 +170,8 @@ CI overrides it with the calculated release version. The publisher uses the
 workflow's `GITHUB_TOKEN` with `packages: write`. Tag creation uses
 `contents: write`. There is no committed publishing credential.
 
-Create the `yola-org/vestio-events` GitHub repository and push the source before
-this workflow can run. GitHub Packages has not been published from this local
-repository yet. Published Maven versions are immutable.
+Published Maven versions are immutable. Direct pushes to `main` also publish
+and tag after verification succeeds.
 
 For local consumption before a remote publication:
 

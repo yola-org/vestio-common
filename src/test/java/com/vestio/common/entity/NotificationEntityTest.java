@@ -1,6 +1,6 @@
-package com.vestio.events.entity;
+package com.vestio.common.entity;
 
-import com.vestio.events.entity.enums.NotificationType;
+import com.vestio.common.entity.enums.NotificationType;
 import org.hibernate.cfg.Configuration;
 import org.junit.jupiter.api.Test;
 

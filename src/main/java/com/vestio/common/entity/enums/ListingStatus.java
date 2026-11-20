@@ -1,4 +1,4 @@
-package com.vestio.events.entity.enums;
+package com.vestio.common.entity.enums;
 
 public enum ListingStatus {
     AWAITING_ASSETS,

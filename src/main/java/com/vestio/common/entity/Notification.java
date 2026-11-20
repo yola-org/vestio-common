@@ -1,8 +1,8 @@
-package com.vestio.events.entity;
+package com.vestio.common.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import com.vestio.events.entity.enums.NotificationType;
+import com.vestio.common.entity.enums.NotificationType;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;

@@ -1,4 +1,4 @@
-package com.vestio.events.event;
+package com.vestio.common.event;
 
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;

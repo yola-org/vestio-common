@@ -1,8 +1,8 @@
-package com.vestio.events.publisher;
+package com.vestio.common.publisher;
 
-import com.vestio.events.entity.Notification;
-import com.vestio.events.event.BaseEvent;
-import com.vestio.events.event.NotificationEvent;
+import com.vestio.common.entity.Notification;
+import com.vestio.common.event.BaseEvent;
+import com.vestio.common.event.NotificationEvent;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.ContentStreamProvider;
 import software.amazon.awssdk.http.SdkHttpMethod;

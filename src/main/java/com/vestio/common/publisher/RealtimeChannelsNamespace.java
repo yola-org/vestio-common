@@ -1,4 +1,4 @@
-package com.vestio.events.publisher;
+package com.vestio.common.publisher;
 
 public enum RealtimeChannelsNamespace {
     NOTIFICATIONS_NAMESPACE("notifications"),
