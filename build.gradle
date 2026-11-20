@@ -1,0 +1,102 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'jacoco'
+}
+
+group = 'com.vestio'
+version = providers.gradleProperty('version').get()
+description = 'Vestio Java entities, enums, events, repositories and AppSync Events publishing'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(25) }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+    options.addBooleanOption('Xdoclint:none', true)
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    // Keep SDK components aligned when a consumer also uses S3, SQS or Secrets Manager.
+    api platform('software.amazon.awssdk:bom:2.59.2')
+    api 'software.amazon.awssdk:auth'
+    implementation 'software.amazon.awssdk:http-auth-aws'
+
+    api 'jakarta.persistence:jakarta.persistence-api:3.2.0'
+    api 'tools.jackson.core:jackson-databind:3.1.4'
+    api 'org.springframework.data:spring-data-jpa:4.1.0'
+    // Applications provide their Hibernate runtime. This library is not a Boot application.
+    compileOnly 'org.hibernate.orm:hibernate-core:7.4.1.Final'
+    compileOnly 'org.projectlombok:lombok:1.18.46'
+    annotationProcessor 'org.projectlombok:lombok:1.18.46'
+
+    testImplementation platform('org.junit:junit-bom:6.0.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.assertj:assertj-core:3.27.7'
+    testImplementation 'org.mockito:mockito-core:5.23.0'
+    testImplementation 'org.hibernate.orm:hibernate-core:7.4.1.Final'
+    testRuntimeOnly 'com.h2database:h2:2.4.240'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    finalizedBy tasks.named('jacocoTestReport')
+}
+jacoco { toolVersion = '0.8.15' }
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports { xml.required = true; html.required = true }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = 'vestio-events'
+            pom {
+                name = 'Vestio Events'
+                description = project.description
+                url = 'https://github.com/yola-org/vestio-events'
+                scm {
+                    connection = 'scm:git:git://github.com/yola-org/vestio-events.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/yola-org/vestio-events.git'
+                    url = 'https://github.com/yola-org/vestio-events'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'GitHubPackages'
+            url = uri('https://maven.pkg.github.com/yola-org/vestio-events')
+            credentials {
+                username = providers.gradleProperty('gpr.user').orElse(providers.environmentVariable('GITHUB_ACTOR')).getOrNull()
+                password = providers.gradleProperty('gpr.key').orElse(providers.environmentVariable('GITHUB_TOKEN')).getOrNull()
+            }
+        }
+    }
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn tasks.named('check')
+    doFirst {
+        String tag = providers.environmentVariable('GITHUB_REF_NAME').getOrElse('')
+        if (providers.environmentVariable('GITHUB_REF_TYPE').getOrElse('') == 'tag' && tag != "v${project.version}") {
+            throw new GradleException("Release tag ${tag} must match project version v${project.version}")
+        }
+        if (!(project.version.toString() ==~ /\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?/)) {
+            throw new GradleException('Publishing requires a semantic release version')
+        }
+    }
+}
