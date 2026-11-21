@@ -2,7 +2,7 @@
 
 Plain Java entities, enums, event envelopes and IAM-signed AppSync publishing shared by Vestio applications. No Spring dependency or repositories are included.
 
-Artifact: `com.vestio:vestio-common:0.4.0`. Java 25.
+Artifact: `com.vestio:vestio-common:0.5.0`. Java 25.
 
 ## Shared model
 
@@ -49,3 +49,7 @@ accept `NotificationPayload`, while the JPA entity and wire envelope retain JSON
 maps. Optional fields, annotations and nested objects use normal Jackson behavior.
 `NotificationCreated` and internal dispatchers are removed; consumers call the
 shared AppSync publisher directly after saving and flushing their notification.
+
+## Timestamp contract
+
+All notification and event timestamps use `Instant` and ISO 8601 UTC strings ending in `Z`. Consumers must migrate timestamp columns to `TIMESTAMP WITH TIME ZONE` before using this version. This changes the Java notification timestamp getters, setters and builder arguments from `LocalDateTime` to `Instant`. Calendar dates remain date-only.
