@@ -8,6 +8,7 @@ public enum NotificationType {
     LISTING_UPDATED("listing-updated"),
     LISTING_DELETED("listing-deleted"),
     OFFER_SENT("offer-sent"),
+    OFFER_ACCEPTED("offer-accepted"),
     // Retained for notifications already stored by older consumers.
     OFFER_CREATED("offer-created"),
     OFFER_UPDATED("offer-updated"),

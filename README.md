@@ -2,7 +2,7 @@
 
 Plain Java entities, enums, event envelopes and IAM-signed AppSync publishing shared by Vestio applications. No Spring dependency or repositories are included.
 
-Artifact: `com.vestio:vestio-common:0.5.0`. Java 25.
+Artifact: `com.vestio:vestio-common:0.6.0`. Java 25.
 
 ## Shared model
 
@@ -53,3 +53,7 @@ shared AppSync publisher directly after saving and flushing their notification.
 ## Timestamp contract
 
 All notification and event timestamps use `Instant` and ISO 8601 UTC strings ending in `Z`. Consumers must migrate timestamp columns to `TIMESTAMP WITH TIME ZONE` before using this version. This changes the Java notification timestamp getters, setters and builder arguments from `LocalDateTime` to `Instant`. Calendar dates remain date-only.
+
+## Offer acceptance
+
+`NotificationType.OFFER_ACCEPTED` serializes as `offer-accepted`. `OfferAcceptedPayload` contains `offerId`, `chatId`, numeric `amount`, `currency`, `ownerName`, `buyerName` and `listingTitle`. The notification is addressed to the buyer; the backend uses the same payload for the initial chat system message.
