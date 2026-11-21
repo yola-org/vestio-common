@@ -1,6 +1,8 @@
 package com.vestio.common.publisher;
 
 import com.vestio.common.event.Event;
+import com.vestio.common.event.ChatEvent;
+import tools.jackson.databind.JsonNode;
 import com.vestio.common.event.EventType;
 import java.time.Instant;
 import com.vestio.common.entity.Notification;
@@ -45,7 +47,7 @@ class AppSyncEventsPublisherTest {
     void signsAndPublishesToUserChannel(EventType namespace) {
         respond(200, "{\"successful\":[{\"identifier\":\"one\"}],\"failed\":[]}");
         UUID userId = UUID.randomUUID();
-        publisher.dispatchEvent(new Event(UUID.randomUUID(), namespace, Map.of("message", "hello"), Instant.now()), userId).join();
+        publisher.dispatchEvent(new Event<>(UUID.randomUUID(), namespace, Map.of("message", "hello"), Instant.now()), userId).join();
 
         ArgumentCaptor<HttpRequest> request = ArgumentCaptor.forClass(HttpRequest.class);
         verify(httpClient).sendAsync(request.capture(), any(HttpResponse.BodyHandler.class));
@@ -61,6 +63,23 @@ class AppSyncEventsPublisherTest {
         assertThat(body.path("events").size()).isEqualTo(1);
         assertThat(mapper.readTree(body.path("events").get(0).asString()).path("type").asString())
                 .isEqualTo(namespace.getValue());
+    }
+
+    @Test
+    void publishesTypedChatPayloadOnTheChatChannel() {
+        respond(200, "{\"successful\":[{\"identifier\":\"one\"}],\"failed\":[]}");
+        UUID userId = UUID.randomUUID();
+        ChatEvent.Payload payload = new ChatEvent.Payload(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                "Hello", false, null, null, Instant.now());
+        publisher.dispatchEvent(new ChatEvent(payload), userId).join();
+        ArgumentCaptor<HttpRequest> request = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient).sendAsync(request.capture(), any(HttpResponse.BodyHandler.class));
+        JsonNode body = mapper.readTree(readBody(request.getValue()));
+        assertThat(body.path("channel").asString()).isEqualTo("/chat/" + userId);
+        JsonNode event = mapper.readTree(body.path("events").get(0).asString());
+        assertThat(event.path("type").asString()).isEqualTo("chat");
+        assertThat(event.path("payload").path("chatId").asString()).isEqualTo(payload.chatId().toString());
+        assertThat(event.path("payload").path("content").asString()).isEqualTo("Hello");
     }
 
     @Test
@@ -90,14 +109,14 @@ class AppSyncEventsPublisherTest {
     @Test
     void propagatesHttpFailure() {
         respond(403, "{}");
-        assertThatThrownBy(() -> publisher.dispatchEvent(new Event(UUID.randomUUID(), EventType.CHAT, Map.of(), Instant.now()), UUID.randomUUID()).join())
+        assertThatThrownBy(() -> publisher.dispatchEvent(new Event<>(UUID.randomUUID(), EventType.CHAT, Map.of(), Instant.now()), UUID.randomUUID()).join())
                 .hasRootCauseMessage("AppSync publish failed with HTTP 403");
     }
 
     @Test
     void rejectsPartialFailure() {
         respond(200, "{\"successful\":[],\"failed\":[{\"identifier\":\"one\"}]}");
-        assertThatThrownBy(() -> publisher.dispatchEvent(new Event(UUID.randomUUID(), EventType.CHAT, Map.of(), Instant.now()), UUID.randomUUID()).join())
+        assertThatThrownBy(() -> publisher.dispatchEvent(new Event<>(UUID.randomUUID(), EventType.CHAT, Map.of(), Instant.now()), UUID.randomUUID()).join())
                 .hasRootCauseMessage("AppSync did not confirm event publication");
     }
 

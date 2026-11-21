@@ -2,14 +2,15 @@
 
 Plain Java entities, enums, event envelopes and IAM-signed AppSync publishing shared by Vestio applications. No Spring dependency or repositories are included.
 
-Artifact: `com.vestio:vestio-common:0.6.0`. Java 25.
+Artifact: `com.vestio:vestio-common:0.7.0`. Java 25.
 
 ## Shared model
 
 - `Notification`: persisted entity with `id`, `userId`, `type` (`NotificationType`), JSON `payload`, optional `listingId`, `readAt`, and `createdAt`.
 - `NotificationType`: serializes as `listing-created`, `listing-published`, listing update/delete and offer create/update/delete types. JPA stores enum names.
-- `Event`: JSON envelope with `id`, `type` (`EventType`), JSON map `payload`, and `occurredAt`.
-- `EventType`: `notification` or `chat`. Notification payloads contain the saved notification; chat payloads may be defined later.
+- `Event<T>`: generic JSON envelope with `id`, `type` (`EventType`), typed `payload`, and `occurredAt`.
+- `ChatEvent`: extends `Event<ChatEvent.Payload>`; its nested static payload record carries the saved message fields.
+- `EventType`: `notification` or `chat`. Notification payloads contain the saved notification; chat events carry the concrete saved-message payload.
 - `AppSyncEventsPublisher`: reusable HTTP publisher. Applications provide endpoint, region, Jackson mapper, AWS credentials provider and HTTP client.
 
 Applications keep their own notification repositories, services and database migrations. There is no notification outbox. Services save and flush notifications, then call the publisher directly and await the result. Send failures propagate so the surrounding transaction can roll back.
@@ -57,3 +58,9 @@ All notification and event timestamps use `Instant` and ISO 8601 UTC strings end
 ## Offer acceptance
 
 `NotificationType.OFFER_ACCEPTED` serializes as `offer-accepted`. `OfferAcceptedPayload` contains `offerId`, `chatId`, numeric `amount`, `currency`, `ownerName`, `buyerName` and `listingTitle`. The notification is addressed to the buyer; the backend uses the same payload for the initial chat system message.
+
+## Typed chat events
+
+`ChatEvent` uses `type: "chat"` and a concrete `ChatEvent.Payload` record with `id`, `chatId`, nullable `senderId`, nullable `content`, `system`, nullable `systemType`, nullable JSON `params`, and UTC `createdAt`. These keys match the backend `MessageDto`. The event ID is the persisted message ID. `new ChatEvent(payload)` supplies the envelope timestamp; its JSON constructor also validates the type and matching IDs.
+
+Publish through `publisher.dispatchEvent(chatEvent, userId)` using the existing `/chat/<userId>` channel. Deserialize a chat event with `ChatEvent.class` to retain the concrete payload type. Notification factories and their JSON shape remain compatible. Version 0.7.0 changes `Event` from a record to a generic base class; consumers must rebuild, use `Event<?>` for unknown payload types, and `new Event<>(...)` for generic construction. The notification factory still copies its map payload defensively.

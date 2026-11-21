@@ -53,7 +53,7 @@ public class AppSyncEventsPublisher implements AutoCloseable {
     }
 
     /** Publishes to the user ID shared by users.id and the authenticated subscription channel. */
-    public CompletableFuture<Void> dispatchEvent(Event event, UUID userId) {
+    public CompletableFuture<Void> dispatchEvent(Event<?> event, UUID userId) {
         try {
             Objects.requireNonNull(event);
             Objects.requireNonNull(userId);
