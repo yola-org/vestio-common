@@ -2,7 +2,7 @@
 
 Plain Java entities, enums, event envelopes and IAM-signed AppSync publishing shared by Vestio applications. No Spring dependency or repositories are included.
 
-Artifact: `com.vestio:vestio-common:0.7.0`. Java 25.
+Artifact: `com.vestio:vestio-common:0.9.0`. Java 25.
 
 ## Shared model
 
@@ -64,3 +64,15 @@ All notification and event timestamps use `Instant` and ISO 8601 UTC strings end
 `ChatEvent` uses `type: "chat"` and a concrete `ChatEvent.Payload` record with `id`, `chatId`, nullable `senderId`, nullable `content`, `system`, nullable `systemType`, nullable JSON `params`, and UTC `createdAt`. These keys match the backend `MessageDto`. The event ID is the persisted message ID. `new ChatEvent(payload)` supplies the envelope timestamp; its JSON constructor also validates the type and matching IDs.
 
 Publish through `publisher.dispatchEvent(chatEvent, userId)` using the existing `/chat/<userId>` channel. Deserialize a chat event with `ChatEvent.class` to retain the concrete payload type. Notification factories and their JSON shape remain compatible. Version 0.7.0 changes `Event` from a record to a generic base class; consumers must rebuild, use `Event<?>` for unknown payload types, and `new Event<>(...)` for generic construction. The notification factory still copies its map payload defensively.
+
+## Rejected listing content
+
+`ListingStatus.REJECTED_CONTENT` identifies listings refused by image moderation.
+The image Lambda persists this terminal result without retrying confirmed violations.
+The backend includes these listings only in their owner's lists and Pending feed;
+public browsing and listing details continue to require `AVAILABLE`.
+The frontend displays a refusal badge and a placeholder without requesting listing photos.
+
+This status is introduced in `0.9.0` (latest preceding published tag: `v0.8.0`).
+Publish common first, then deploy consumers that understand the status before the
+Lambda starts writing it. AWS service and database errors remain retryable.
