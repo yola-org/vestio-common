@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum NotificationType {
     LISTING_CREATED("listing-created"),
     LISTING_PUBLISHED("listing-published"),
+    LISTING_REFUSED("listing-refused"),
     LISTING_UPDATED("listing-updated"),
     LISTING_DELETED("listing-deleted"),
     OFFER_SENT("offer-sent"),
